@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cek Status</title>
+</head>
+<body>
+  <h2>Ambil Foto & Lokasi</h2>
+
+  <video id="video" width="300" autoplay></video><br>
+  <button id="snap">Ambil Foto</button>
+  <canvas id="canvas" width="300" height="200" style="display:none;"></canvas>
+
+  <p><strong>Lokasi:</strong> <span id="location">Mendeteksi...</span></p>
+
+  <script>
+    // Akses kamera
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        document.getElementById('video').srcObject = stream;
+      });
+
+    // Ambil foto
+    document.getElementById('snap').onclick = () => {
+      const canvas = document.getElementById('canvas');
+      const video = document.getElementById('video');
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const imgData = canvas.toDataURL('image/png');
+      console.log('Foto diambil:', imgData);
+
+      // Kirim imgData ke server atau API (pakai fetch atau form)
+    };
+
+    // Akses lokasi
+    navigator.geolocation.getCurrentPosition(position => {
+      const { latitude, longitude } = position.coords;
+      document.getElementById('location').textContent = `${latitude}, ${longitude}`;
+
+      // Kirim koordinat ke server atau tampilkan link Google Maps
+      console.log('Lokasi:', latitude, longitude);
+    });
+  </script>
+</body>
+</html>
