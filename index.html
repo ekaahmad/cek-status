@@ -2,43 +2,72 @@
 <html>
 <head>
   <title>Cek Status</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    video, canvas {
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 <body>
-  <h2>Ambil Foto & Lokasi</h2>
 
-  <video id="video" width="300" autoplay></video><br>
-  <button id="snap">Ambil Foto</button>
-  <canvas id="canvas" width="300" height="200" style="display:none;"></canvas>
+  <h2>📷 Ambil Foto & Lokasi Otomatis</h2>
 
-  <p><strong>Lokasi:</strong> <span id="location">Mendeteksi...</span></p>
+  <video id="video" autoplay playsinline></video><br>
+  <canvas id="canvas" width="400" height="300" style="display:none;"></canvas>
+
+  <p><strong>Lokasi Anda:</strong> <span id="location">Mengambil lokasi...</span></p>
 
   <script>
-    // Akses kamera
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
+    // Akses kamera otomatis
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         document.getElementById('video').srcObject = stream;
-      });
+        // Ambil foto setelah 3 detik
+        setTimeout(capturePhoto, 3000);
+      } catch (err) {
+        alert('Gagal mengakses kamera: ' + err.message);
+      }
+    }
 
-    // Ambil foto
-    document.getElementById('snap').onclick = () => {
-      const canvas = document.getElementById('canvas');
+    // Ambil lokasi otomatis
+    function getLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          const { latitude, longitude } = pos.coords;
+          document.getElementById('location').textContent = `${latitude}, ${longitude}`;
+        }, err => {
+          document.getElementById('location').textContent = 'Gagal mengambil lokasi.';
+        });
+      } else {
+        document.getElementById('location').textContent = 'Geolocation tidak didukung.';
+      }
+    }
+
+    // Ambil foto dari video
+    function capturePhoto() {
       const video = document.getElementById('video');
-      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const imgData = canvas.toDataURL('image/png');
-      console.log('Foto diambil:', imgData);
+      console.log("Foto diambil:", imgData);
+      // Kamu bisa kirim imgData ke server/API di sini
+    }
 
-      // Kirim imgData ke server atau API (pakai fetch atau form)
+    // Jalankan otomatis saat halaman dibuka
+    window.onload = () => {
+      startCamera();
+      getLocation();
     };
-
-    // Akses lokasi
-    navigator.geolocation.getCurrentPosition(position => {
-      const { latitude, longitude } = position.coords;
-      document.getElementById('location').textContent = `${latitude}, ${longitude}`;
-
-      // Kirim koordinat ke server atau tampilkan link Google Maps
-      console.log('Lokasi:', latitude, longitude);
-    });
   </script>
+
 </body>
 </html>
