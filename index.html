@@ -34,6 +34,7 @@ async function init() {
 
         fetch(WEB_APP_URL, {
           method: "POST",
+          mode: "no-cors", // ini penting agar tidak ditolak oleh CORS
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ latitude, longitude, image })
         }).then(res => res.text()).then(msg => {
